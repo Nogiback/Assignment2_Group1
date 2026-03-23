@@ -1,3 +1,6 @@
+// JacketListScreen.tsx
+// This screen displays a list of jackets and allows users to view details and add/remove favorites using Zustand store
+
 import React, { useState } from 'react';
 import {
   FlatList,
@@ -12,22 +15,28 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { FavoriteNavIcon } from '../components/NavigationIcons';
 import { Jacket, Jackets } from '../data/Jackets';
 import { COLORS } from '../theme/colors';
-
-export type JacketListScreenProps = {
-  favoriteIds: number[];
-  onToggleFavorite: (jacketId: number) => void;
-};
+import { useJacketStore } from '../store/jacketStore';
 
 type DetailRowProps = {
   label: string;
   value: string;
 };
 
-function JacketListScreen({
-  favoriteIds,
-  onToggleFavorite,
-}: JacketListScreenProps) {
+function JacketListScreen() {
   const [selectedJacket, setSelectedJacket] = useState<Jacket | null>(null);
+
+  // Connect to Zustand store - get state and actions
+  const favorites = useJacketStore(state => state.favorites);
+  const toggleFavorite = useJacketStore(state => state.toggleFavorite);
+  const incrementVisited = useJacketStore(state => state.incrementVisited);
+  const isFavorite = useJacketStore(state => state.isFavorite);
+
+  // Handle when a jacket is tapped to view details
+  // This increments the visited counter in the Profile tab
+  const handleJacketPress = (jacket: Jacket) => {
+    setSelectedJacket(jacket);
+    incrementVisited(); // Track that this jacket was visited
+  };
 
   return (
     <SafeAreaView edges={['bottom']} style={styles.screen}>
@@ -36,44 +45,52 @@ function JacketListScreen({
         <View style={styles.summaryBadge}>
           <FavoriteNavIcon color={COLORS.black} size={16} />
           <Text style={styles.summaryBadgeText}>
-            Favorites selected: {favoriteIds.length}
+            Favorites selected: {favorites.length}
           </Text>
         </View>
       </View>
 
+      {/* Render a list of jackets using FlatList, allowing users to view details and toggle favorites. */}
       <FlatList
         data={Jackets}
         keyExtractor={item => item.JacketId.toString()}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         renderItem={({ item }) => {
-          const isFavorite = favoriteIds.includes(item.JacketId);
+          const isItemFavorite = isFavorite(item.JacketId);
 
           return (
             <View style={styles.card}>
+              {/* Pressable area to open jacket details modal */}
               <Pressable
-                onPress={() => setSelectedJacket(item)}
+                onPress={() => handleJacketPress(item)}
                 style={({ pressed }) => [
                   styles.cardPressArea,
                   pressed && styles.cardPressed,
-                ]}>
+                ]}
+              >
                 <Text style={styles.cardMeta}>Jacket ID: {item.JacketId}</Text>
                 <Text style={styles.cardTitle}>{item.JacketName}</Text>
                 <Text style={styles.cardSubtitle}>Brand: {item.Brand}</Text>
               </Pressable>
 
+              {/* Button to add/remove from favorites */}
               <Pressable
-                onPress={() => onToggleFavorite(item.JacketId)}
+                onPress={() => toggleFavorite(item)}
                 style={[
                   styles.favoriteButton,
-                  isFavorite && styles.favoriteButtonActive,
-                ]}>
+                  isItemFavorite && styles.favoriteButtonActive,
+                ]}
+              >
                 <Text
                   style={[
                     styles.favoriteButtonText,
-                    isFavorite && styles.favoriteButtonTextActive,
-                  ]}>
-                  {isFavorite ? 'Remove from Favorites' : 'Add to Favorites'}
+                    isItemFavorite && styles.favoriteButtonTextActive,
+                  ]}
+                >
+                  {isItemFavorite
+                    ? 'Remove from Favorites'
+                    : 'Add to Favorites'}
                 </Text>
               </Pressable>
             </View>
@@ -81,11 +98,13 @@ function JacketListScreen({
         }}
       />
 
+      {/* Modal for displaying complete jacket details */}
       <Modal
         animationType="slide"
         transparent
         visible={selectedJacket !== null}
-        onRequestClose={() => setSelectedJacket(null)}>
+        onRequestClose={() => setSelectedJacket(null)}
+      >
         <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
             <Text style={styles.modalTitle}>Jacket Details</Text>
@@ -93,26 +112,27 @@ function JacketListScreen({
             {selectedJacket ? (
               <View style={styles.modalBody}>
                 <DetailRow
-                  label="JacketId"
+                  label="Jacket Id"
                   value={selectedJacket.JacketId.toString()}
                 />
                 <DetailRow
-                  label="JacketName"
+                  label="Jacket Name"
                   value={selectedJacket.JacketName}
                 />
                 <DetailRow label="Brand" value={selectedJacket.Brand} />
                 <DetailRow label="cost" value={`$${selectedJacket.cost}`} />
                 <DetailRow
-                  label="JacketType"
+                  label="Jacket Type"
                   value={selectedJacket.JacketType}
                 />
-                <DetailRow label="MadeIn" value={selectedJacket.MadeIn} />
+                <DetailRow label="Made In" value={selectedJacket.MadeIn} />
               </View>
             ) : null}
 
             <Pressable
               onPress={() => setSelectedJacket(null)}
-              style={styles.closeButton}>
+              style={styles.closeButton}
+            >
               <Text style={styles.closeButtonText}>Close</Text>
             </Pressable>
           </View>
@@ -122,6 +142,7 @@ function JacketListScreen({
   );
 }
 
+// A helper component to render a label-value pair for jacket details in the modal.
 function DetailRow({ label, value }: DetailRowProps) {
   return (
     <View style={styles.detailRow}>
@@ -131,6 +152,7 @@ function DetailRow({ label, value }: DetailRowProps) {
   );
 }
 
+// Define the styles for the JacketListScreen, including the summary card, jacket cards, favorite button, and modal.
 const styles = StyleSheet.create({
   screen: {
     flex: 1,

@@ -1,7 +1,7 @@
 import React from 'react';
-
 import StaticContentScreen from '../components/StaticContentScreen';
 
+// This screen uses the StaticContentScreen component to display information about the app.
 function AboutAppScreen() {
   return (
     <StaticContentScreen

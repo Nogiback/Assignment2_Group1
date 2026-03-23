@@ -1,7 +1,7 @@
 import React from 'react';
-
 import StaticContentScreen from '../components/StaticContentScreen';
 
+// This screen uses the StaticContentScreen component to display contact information.
 function ContactUsScreen() {
   return (
     <StaticContentScreen
@@ -10,7 +10,6 @@ function ContactUsScreen() {
       highlights={[
         'Email: support@jacketgallery.ca',
         'Phone: +1 (444) 555-0000',
-    
       ]}
     />
   );

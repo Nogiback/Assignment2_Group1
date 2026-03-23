@@ -1,3 +1,6 @@
+// NavigationIcons.tsx
+// All SVG icons used in the app's navigation are defined here as React components.
+
 import React from 'react';
 import Svg, { G, Path, SvgProps } from 'react-native-svg';
 
